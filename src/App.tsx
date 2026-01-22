@@ -8,6 +8,7 @@ import ApplyLoan from "./pages/ApplyLoan";
 import PayInterest from "./pages/PayInterest";
 import PaymentHistory from "./pages/PaymentHistory";
 import NotFound from "./pages/NotFound";
+import WhatsAppButton from "./components/WhatsAppButton";
 
 const queryClient = new QueryClient();
 
@@ -22,9 +23,9 @@ const App = () => (
           <Route path="/apply-loan" element={<ApplyLoan />} />
           <Route path="/pay-interest" element={<PayInterest />} />
           <Route path="/payment-history" element={<PaymentHistory />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
+        <WhatsAppButton />
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
