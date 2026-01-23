@@ -179,6 +179,8 @@ const PayInterest = () => {
         onClose={() => setShowPaymentModal(false)}
         amount={formData.interestAmount}
         customerName={formData.customerName}
+        phoneNumber={formData.phoneNumber}
+        place={formData.place}
       />
     </div>
   );
