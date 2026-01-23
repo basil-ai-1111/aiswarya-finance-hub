@@ -35,9 +35,9 @@ const PaymentHistory = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       <Header />
-      <main className="pt-24 pb-16">
+      <main className="pt-24 pb-16 flex-1">
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto">
             {/* Back Button */}
