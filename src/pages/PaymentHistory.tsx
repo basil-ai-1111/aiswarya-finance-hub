@@ -1,9 +1,20 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, Calendar, IndianRupee, CheckCircle2, Clock, Loader2 } from "lucide-react";
+import { ArrowLeft, Calendar, IndianRupee, CheckCircle2, Clock, Loader2, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface Payment {
   id: string;
@@ -17,22 +28,51 @@ interface Payment {
 const PaymentHistory = () => {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
-    const fetchPayments = async () => {
-      const { data, error } = await supabase
-        .from("interest_payments")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (!error && data) {
-        setPayments(data);
-      }
-      setIsLoading(false);
-    };
-
     fetchPayments();
   }, []);
+
+  const fetchPayments = async () => {
+    const { data, error } = await supabase
+      .from("interest_payments")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (!error && data) {
+      setPayments(data);
+    }
+    setIsLoading(false);
+  };
+
+  const handleDelete = async () => {
+    if (!deleteId) return;
+    
+    setIsDeleting(true);
+    const { error } = await supabase
+      .from("interest_payments")
+      .delete()
+      .eq("id", deleteId);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete payment record",
+        variant: "destructive",
+      });
+    } else {
+      setPayments(payments.filter((p) => p.id !== deleteId));
+      toast({
+        title: "Deleted",
+        description: "Payment record has been removed",
+      });
+    }
+    setIsDeleting(false);
+    setDeleteId(null);
+  };
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -100,11 +140,20 @@ const PaymentHistory = () => {
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2 sm:text-right">
-                        <IndianRupee className="w-5 h-5 text-gold" />
-                        <span className="text-2xl font-bold text-gold">
-                          {payment.amount.toLocaleString("en-IN")}
-                        </span>
+                      <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2">
+                          <IndianRupee className="w-5 h-5 text-gold" />
+                          <span className="text-2xl font-bold text-gold">
+                            {payment.amount.toLocaleString("en-IN")}
+                          </span>
+                        </div>
+                        <button
+                          onClick={() => setDeleteId(payment.id)}
+                          className="p-2 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                          aria-label="Delete payment"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -130,6 +179,35 @@ const PaymentHistory = () => {
         </div>
       </main>
       <Footer />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Payment Record</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this payment record? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
