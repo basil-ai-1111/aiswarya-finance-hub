@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { QrCode, CheckCircle2, X } from "lucide-react";
+import { QrCode, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -8,19 +8,41 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface PaymentModalProps {
   isOpen: boolean;
   onClose: () => void;
   amount: string;
   customerName: string;
+  phoneNumber: string;
+  place: string;
 }
 
-const PaymentModal = ({ isOpen, onClose, amount, customerName }: PaymentModalProps) => {
+const PaymentModal = ({ isOpen, onClose, amount, customerName, phoneNumber, place }: PaymentModalProps) => {
   const [showSuccess, setShowSuccess] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const navigate = useNavigate();
+  const { toast } = useToast();
 
-  const handlePaymentDone = () => {
+  const handlePaymentDone = async () => {
+    setIsProcessing(true);
+    
+    // Save payment to database
+    const { error } = await supabase.from("interest_payments").insert({
+      customer_name: customerName,
+      phone_number: phoneNumber,
+      place: place,
+      amount: parseFloat(amount),
+    });
+
+    if (error) {
+      toast({ title: "Failed to record payment", variant: "destructive" });
+      setIsProcessing(false);
+      return;
+    }
+
     setShowSuccess(true);
     setTimeout(() => {
       setShowSuccess(false);
@@ -55,10 +77,11 @@ const PaymentModal = ({ isOpen, onClose, amount, customerName }: PaymentModalPro
               <Button
                 onClick={handlePaymentDone}
                 size="lg"
+                disabled={isProcessing}
                 className="w-full gradient-gold shadow-gold hover:shadow-elevated transition-all duration-300 text-primary-foreground font-semibold"
               >
                 <CheckCircle2 className="w-5 h-5 mr-2" />
-                Payment Done
+                {isProcessing ? "Processing..." : "Payment Done"}
               </Button>
             </div>
           </>
